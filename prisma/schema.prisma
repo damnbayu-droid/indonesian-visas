@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  phone         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  applications  Application[]
+}
+
+// Application model
+model Application {
+  id              String   @id @default(cuid())
+  applicationId   String   @unique @default(cuid()) // External application ID
+
+  // User relation (optional for guest applications)
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id])
+
+  // Personal Information
+  firstName       String
+  lastName        String
+  email           String
+  whatsapp        String
+  passportNumber  String?
+  dob             String?
+  originalAddress String?
+
+  // Emergency Contact
+  emergencyContact    String?
+  emergencyPhone      String?
+
+  // Visa Information
+  country         String
+  visaType        String
+  customVisaCode  String?
+  arrivalDate     String?
+  numApplicants   Int      @default(1)
+
+  // Pricing
+  pnbp            Int      @default(0)
+  fee             Int      @default(0)
+  total           Int      @default(0)
+  sponsor         Boolean  @default(false)
+
+  // Payment Information
+  paymentMethod   String?
+  paymentStatus   String   @default("pending") // pending, completed, failed
+  paymentLink     String?
+
+  // Application Status
+  status          String   @default("pending") // pending, submitted, processing, approved, rejected
+  submittedAt     DateTime @default(now())
+  processedAt     DateTime?
+  completedAt     DateTime?
+
+  // Metadata
+  ipAddress       String?
+  userAgent       String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Visa Type model (for managing visa options)
+model VisaType {
+  id          String   @id @default(cuid())
+  code        String   @unique // e.g., B1, C1, D1
+  name        String   // e.g., B1 VOA (Visa on Arrival)
+  description String?
+  pnbp        Int      // Government fee
+  fee         Int      // Service fee
+  sponsor     Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  category    String   // e.g., tourist, business, investment
+  duration    String?  // e.g., 30 days, 60 days
+  entries     String?  // single, multiple
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([code])
+  @@index([category])
+  @@index([isActive])
+}
+
+// Country model (for managing supported countries)
+model Country {
+  id          String   @id @default(cuid())
+  code        String   @unique // e.g., US, GB, AU
+  name        String
+  flag        String?  // emoji flag
+  special     Boolean  @default(false) // requires special treatment
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([code])
+  @@index([isActive])
+}
+
+// Review model (for Google Reviews integration)
+model Review {
+  id          String   @id @default(cuid())
+  authorName  String
+  authorImage String?
+  rating      Int      // 1-5
+  comment     String?
+  source      String   @default("google") // google, manual
+  sourceId    String?  // External review ID
+  isActive    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([rating])
+  @@index([isActive])
+  @@index([isFeatured])
+}
